@@ -34,3 +34,10 @@ lerna-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Backend
+backend/prisma/*.db
+backend/prisma/*.db-journal
+backend/node_modules/
+backend/dist/
+backend/.env

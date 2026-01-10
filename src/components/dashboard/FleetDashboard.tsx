@@ -1,15 +1,59 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { mockFleetKPI, mockDrones } from '../../utils/mockData'
 import DroneCard from './DroneCard'
+import type { Drone } from '../../types'
 
 type FilterType = 'all' | 'active' | 'critical'
 
 const FleetDashboard = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
+  const [liveAssets, setLiveAssets] = useState<Drone[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch live Orca-001 from backend
+  useEffect(() => {
+    const fetchLiveAssets = async () => {
+      try {
+        console.log('🔄 Fetching live assets from backend...')
+        const response = await fetch('http://localhost:5001/api/fleet/assets')
+        if (!response.ok) throw new Error('Failed to fetch')
+        
+        const backendAssets = await response.json()
+        console.log('✅ Received backend assets:', backendAssets)
+
+        // Transform backend data to match Drone interface
+        const transformed: Drone[] = backendAssets.map((asset: any) => ({
+          id: asset.assetId.replace('orca-', ''),
+          name: asset.name,
+          status: asset.status.toLowerCase() as any,
+          soh: asset.soh,
+          soc: asset.soc,
+          voltage: 400, // Mock value
+          temperature: 42, // Mock value
+          cycleCount: 298, // Mock value
+        }))
+
+        setLiveAssets(transformed)
+        console.log('✅ Live Orca-001 is now active!')
+      } catch (error) {
+        console.warn('⚠️ Backend unavailable, using mock data only:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLiveAssets()
+  }, [])
+
+  // Combine live Orca-001 with mocked Orca-002 through Orca-010
+  const allDrones = [
+    ...liveAssets,
+    ...mockDrones.filter(d => d.id !== '001'), // Exclude Orca-001 from mocks
+  ]
 
   // Filter drones based on selected filter
-  const filteredDrones = mockDrones.filter(drone => {
+  const filteredDrones = allDrones.filter(drone => {
     if (activeFilter === 'all') return true
     if (activeFilter === 'active') return drone.status === 'flight'
     if (activeFilter === 'critical') return drone.status === 'fault' || drone.soh < 85

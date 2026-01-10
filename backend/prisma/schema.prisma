@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Asset {
+  id               String             @id
+  name             String
+  state            AssetStateLatest?
+  telemetrySamples TelemetrySample[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model AssetStateLatest {
+  id                  String   @id @default(uuid())
+  assetId             String   @unique
+  asset               Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  timestamp           DateTime @default(now())
+  status              String
+  soc                 Float
+  soh                 Float
+  isFlying            Boolean
+  isCharging          Boolean
+  criticalFaultCount  Int
+  updatedAt           DateTime @updatedAt
+}
+
+model TelemetrySample {
+  id             String           @id @default(uuid())
+  assetId        String
+  asset          Asset            @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  dayIndex       Int
+  cycleIndex     Float
+  missionId      Int
+  timestamp      DateTime         @default(now())
+  currentA       Float
+  temperatureC   Float
+  cells          CellTelemetry[]
+  createdAt      DateTime         @default(now())
+  
+  @@index([assetId, dayIndex])
+  @@index([assetId, cycleIndex])
+}
+
+model CellTelemetry {
+  id         String           @id @default(uuid())
+  sampleId   String
+  sample     TelemetrySample  @relation(fields: [sampleId], references: [id], onDelete: Cascade)
+  cellIndex  Int              // 1-120
+  voltage    Float
+  
+  @@index([sampleId])
+  @@index([sampleId, cellIndex])
+}
