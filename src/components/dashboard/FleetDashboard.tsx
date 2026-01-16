@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { mockFleetKPI, mockDrones } from '../../utils/mockData'
 import DroneCard from './DroneCard'
 import type { Drone } from '../../types'
+import type { SoHFeatures } from '../../types/features'
 
 type FilterType = 'all' | 'active' | 'critical'
 
@@ -11,45 +12,52 @@ const FleetDashboard = () => {
   const [liveAssets, setLiveAssets] = useState<Drone[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Fetch live Orca-001 from backend
+  // Fetch all ORCA drones from feature API
   useEffect(() => {
-    const fetchLiveAssets = async () => {
+    const fetchAllDrones = async () => {
       try {
-        console.log('🔄 Fetching live assets from backend...')
-        const response = await fetch('http://localhost:5001/api/fleet/assets')
-        if (!response.ok) throw new Error('Failed to fetch')
-        
-        const backendAssets = await response.json()
-        console.log('✅ Received backend assets:', backendAssets)
+        const dronePromises = Array.from({ length: 10 }, (_, i) => {
+          const droneId = `ORCA${String(i + 1).padStart(3, '0')}`
+          return fetch(`http://localhost:5001/api/features/drone/${droneId}/snapshot`)
+            .then(res => res.ok ? res.json() : null)
+            .catch(() => null)
+        })
 
-        // Transform backend data to match Drone interface
-        const transformed: Drone[] = backendAssets.map((asset: any) => ({
-          id: asset.assetId.replace('orca-', ''),
-          name: asset.name,
-          status: asset.status.toLowerCase() as any,
-          soh: asset.soh,
-          soc: asset.soc,
-          voltage: 400, // Mock value
-          temperature: 42, // Mock value
-          cycleCount: 298, // Mock value
-        }))
+        const results = await Promise.all(dronePromises)
+        const transformed: Drone[] = results
+          .filter(r => r !== null)
+          .map((item: any) => {
+            const droneId = item.drone_id.replace('ORCA', '').padStart(3, '0')
+            const mockDrone = mockDrones.find(d => d.id === droneId)
+            const hasFault = item.daily_features.thermal_risk_flag || item.daily_features.voltage_imbalance_flag
+            
+            return {
+              id: droneId,
+              name: `Orca-${item.drone_id.replace('ORCA', '')}`,
+              status: hasFault ? 'fault' : (mockDrone?.status || 'charging') as any,
+              soh: item.soh_snapshot ? parseFloat((item.soh_snapshot.SoH * 100).toFixed(1)) : 98,
+              soc: mockDrone?.soc || 72,
+              voltage: item.daily_features.avg_pack_voltage_V || item.daily_features.avg_cell_voltage_V * 120,
+              temperature: item.daily_features.avg_pack_temp_C || 42,
+              cycleCount: Math.round(item.soh_snapshot?.EFC_lifetime || 0),
+            }
+          })
 
         setLiveAssets(transformed)
-        console.log('✅ Live Orca-001 is now active!')
       } catch (error) {
-        console.warn('⚠️ Backend unavailable, using mock data only:', error)
+        console.warn('⚠️ Backend unavailable, using mock data:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchLiveAssets()
+    fetchAllDrones()
   }, [])
 
-  // Combine live Orca-001 with mocked Orca-002 through Orca-010
+  // Combine live assets with mock drones (for any missing)
   const allDrones = [
     ...liveAssets,
-    ...mockDrones.filter(d => d.id !== '001'), // Exclude Orca-001 from mocks
+    ...mockDrones.filter(d => !liveAssets.find(la => la.id === d.id)),
   ]
 
   // Filter drones based on selected filter

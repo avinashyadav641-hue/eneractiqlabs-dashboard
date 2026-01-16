@@ -10,6 +10,7 @@ import type {
   SoHHistoryResponse,
   FleetAggregatedResponse,
   LatestSnapshot,
+  MultiDayComparisonResponse,
 } from './types/features'
 
 dotenv.config()
@@ -229,6 +230,42 @@ app.get('/api/features/fleet/aggregated', (_req: Request, res: Response) => {
   }
 })
 
+// GET /api/features/drone/:droneId/compare
+// Returns features for Days 1, 7, 15 for module comparison
+app.get('/api/features/drone/:droneId/compare', (req: Request, res: Response) => {
+  try {
+    const { droneId } = req.params
+    const comparisonDays = [1, 7, 15]
+    const features: any[] = []
+
+    for (const day of comparisonDays) {
+      const filePath = path.join(
+        DAILY_PATH,
+        `features_daily_${droneId}_day_${String(day).padStart(2, '0')}.parquet`
+      )
+      const data = readParquet(filePath)
+      if (data.length > 0) {
+        features.push(data[0])
+      }
+    }
+
+    if (features.length === 0) {
+      return res.status(404).json({ error: `No comparison data found for ${droneId}` })
+    }
+
+    const response: MultiDayComparisonResponse = {
+      drone_id: droneId,
+      days: comparisonDays.slice(0, features.length),
+      features: features,
+    }
+
+    res.json(response)
+  } catch (error) {
+    console.error('Error fetching comparison data:', error)
+    res.status(500).json({ error: 'Failed to fetch comparison data' })
+  }
+})
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Feature API Server running on http://localhost:${PORT}`)
@@ -237,6 +274,7 @@ app.listen(PORT, () => {
   console.log(`   - GET /api/features/drone/:droneId/daily/:dayIndex`)
   console.log(`   - GET /api/features/drone/:droneId/soh`)
   console.log(`   - GET /api/features/drone/:droneId/snapshot`)
+  console.log(`   - GET /api/features/drone/:droneId/compare`)
   console.log(`   - GET /api/features/fleet/aggregated`)
   console.log(`   - GET /health`)
 })

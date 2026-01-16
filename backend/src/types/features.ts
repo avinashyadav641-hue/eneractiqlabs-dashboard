@@ -21,12 +21,49 @@ export interface DailyFeatures {
   max_temp_delta_C: number
   voltage_imbalance_flag: boolean
   thermal_risk_flag: boolean
+  // Pack-level features
+  avg_pack_voltage_V?: number
+  avg_discharge_power_W?: number
+  energy_throughput_Wh?: number
+  // Module-level features (10 modules)
+  module_1_avg_voltage_V?: number
+  module_2_avg_voltage_V?: number
+  module_3_avg_voltage_V?: number
+  module_4_avg_voltage_V?: number
+  module_5_avg_voltage_V?: number
+  module_6_avg_voltage_V?: number
+  module_7_avg_voltage_V?: number
+  module_8_avg_voltage_V?: number
+  module_9_avg_voltage_V?: number
+  module_10_avg_voltage_V?: number
+  module_1_avg_power_W?: number
+  module_2_avg_power_W?: number
+  module_3_avg_power_W?: number
+  module_4_avg_power_W?: number
+  module_5_avg_power_W?: number
+  module_6_avg_power_W?: number
+  module_7_avg_power_W?: number
+  module_8_avg_power_W?: number
+  module_9_avg_power_W?: number
+  module_10_avg_power_W?: number
+  module_1_power_per_EFC_W?: number
+  module_2_power_per_EFC_W?: number
+  module_3_power_per_EFC_W?: number
+  module_4_power_per_EFC_W?: number
+  module_5_power_per_EFC_W?: number
+  module_6_power_per_EFC_W?: number
+  module_7_power_per_EFC_W?: number
+  module_8_power_per_EFC_W?: number
+  module_9_power_per_EFC_W?: number
+  module_10_power_per_EFC_W?: number
 }
 
 // SoH features (multi-day history)
 export interface SoHFeatures extends DailyFeatures {
   EFC_lifetime: number
   SoH: number
+  RUL_cycles?: number
+  degradation_rate?: number
 }
 
 // Lifetime features (aggregated)
@@ -62,4 +99,11 @@ export interface LatestSnapshot {
     EFC_lifetime: number
     SoH: number
   } | null
+}
+
+// Multi-day comparison for Module Drilldown (Days 1, 7, 15)
+export interface MultiDayComparisonResponse {
+  drone_id: string
+  days: number[]
+  features: DailyFeatures[]
 }

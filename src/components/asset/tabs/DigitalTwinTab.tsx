@@ -24,16 +24,16 @@ const DigitalTwinTab = () => {
       <h3 className="text-xl font-bold text-slate-900">Module Status (Real-time)</h3>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {mockModules.map(module => (
+        {mockModules.map((module, index) => (
           <button
             key={module.id}
-            onClick={() => setSelectedModule(parseInt(module.id.replace('Module ', '')))}
+            onClick={() => setSelectedModule(index + 1)}
             className={`module-card p-4 text-left hover:scale-105 transition-transform cursor-pointer ${
               module.status === 'warning' ? 'border-warning/30' : 'hover:border-electric-blue/30'
             }`}
           >
             <div className="flex justify-between items-center mb-4">
-              <span className="font-bold text-slate-900 text-lg">{module.id}</span>
+              <span className="font-bold text-slate-900 text-lg">{module.name}</span>
               <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border uppercase ${
                   module.status === 'warning'

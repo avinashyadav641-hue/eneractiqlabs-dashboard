@@ -11,12 +11,14 @@ const ThermalTab = () => {
   
   const features = data?.features
 
-  // Extract thermal metrics
-  const maxTemp = features?.max_pack_temp_C?.toFixed(1) || '--'
-  const avgTemp = features?.avg_pack_temp_C?.toFixed(1) || '--'
-  const minTemp = features ? (features.avg_pack_temp_C - features.max_temp_delta_C).toFixed(1) : '--'
-  const deltaT = features?.max_temp_delta_C?.toFixed(1) || '--'
-  const thermalRisk = features?.thermal_risk_flag
+  // Extract thermal metrics - fallback to "Data unavailable" if columns don't exist
+  const maxTemp = features?.max_pack_temp_C != null ? features.max_pack_temp_C.toFixed(1) : 'N/A'
+  const avgTemp = features?.avg_pack_temp_C != null ? features.avg_pack_temp_C.toFixed(1) : 'N/A'
+  const minTemp = (features?.avg_pack_temp_C != null && features?.max_temp_delta_C != null) 
+    ? (features.avg_pack_temp_C - features.max_temp_delta_C).toFixed(1) 
+    : 'N/A'
+  const deltaT = features?.max_temp_delta_C != null ? features.max_temp_delta_C.toFixed(1) : 'N/A'
+  const thermalRisk = features?.thermal_risk_flag === true
 
   return (
     <div className="h-full flex flex-col gap-6">
@@ -28,18 +30,23 @@ const ThermalTab = () => {
         </div>
         <div className="flex items-center gap-3">
           {loading && <span className="text-sm text-slate-500">Loading...</span>}
-          <select
-            value={selectedDay}
-            onChange={(e) => setSelectedDay(Number(e.target.value))}
-            className="glass-card px-4 py-2 text-sm font-medium text-slate-900 border border-white/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
-            disabled={loading}
-          >
-            {Array.from({ length: 15 }, (_, i) => i + 1).map((day) => (
-              <option key={day} value={day}>
-                Day {day}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedDay}
+              onChange={(e) => setSelectedDay(Number(e.target.value))}
+              className="glass-card px-6 py-2.5 pr-10 text-sm font-medium text-slate-900 border border-white/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none cursor-pointer"
+              disabled={loading}
+            >
+              {Array.from({ length: 15 }, (_, i) => i + 1).map((day) => (
+                <option key={day} value={day}>
+                  Day {day}
+                </option>
+              ))}
+            </select>
+            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[20px]">
+              arrow_drop_down
+            </span>
+          </div>
         </div>
       </div>
 

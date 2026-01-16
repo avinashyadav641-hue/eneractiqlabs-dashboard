@@ -5,7 +5,7 @@
   "main": "server/index.js",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
-    "server:dev": "nodemon server/index.ts",
+    "server:dev": "cd backend && npx tsx src/features-server.ts",
     "client:dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
