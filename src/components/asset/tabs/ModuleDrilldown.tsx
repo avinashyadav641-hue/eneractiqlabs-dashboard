@@ -7,16 +7,10 @@ interface ModuleDrilldownProps {
   onBack: () => void
 }
 
-const ModuleDrilldown = ({ moduleNumber, serialNumber, onBack }: ModuleDrilldownProps) => {
+const ModuleDrilldown = ({ moduleNumber, serialNumber: _serialNumber, onBack }: ModuleDrilldownProps) => {
   const { assetId } = useParams<{ assetId: string }>()
   const droneId = `ORCA${assetId?.padStart(3, '0')}`
   const { data, loading, error } = useMultiDayComparison(droneId)
-
-  // Extract module-specific data from features (not used but kept for reference)
-  const getModuleValue = (features: any, moduleIdx: number, metric: string) => {
-    const key = `module_${moduleIdx}_${metric}`
-    return features?.[key] || 0
-  }
 
   // Prepare chart data for all 10 modules
   const chartData = Array.from({ length: 10 }, (_, i) => {
@@ -24,7 +18,7 @@ const ModuleDrilldown = ({ moduleNumber, serialNumber, onBack }: ModuleDrilldown
     const key_voltage = `module_${idx}_avg_voltage_V`
     const key_power = `module_${idx}_avg_power_W`
     const key_power_efc = `module_${idx}_power_per_EFC_W`
-    
+
     return {
       module: idx,
       day1_voltage: (data?.features[0] as any)?.[key_voltage] || 0,
@@ -70,13 +64,13 @@ const ModuleDrilldown = ({ moduleNumber, serialNumber, onBack }: ModuleDrilldown
               </h2>
               <p className="text-slate-500 mt-1 flex items-center gap-2 text-sm">
                 {loading ? (
-                  <span>Loading feature data...</span>
+                  <span>Loading model data...</span>
                 ) : error ? (
                   <span className="text-red-500">Error: {error}</span>
                 ) : (
                   <span className="material-symbols-outlined text-[18px] text-primary">check_circle</span>
                 )}
-                Feature-Engineered Data (No Raw Telemetry)
+                Autonomous Model Inference
               </p>
             </div>
           </div>
@@ -87,7 +81,7 @@ const ModuleDrilldown = ({ moduleNumber, serialNumber, onBack }: ModuleDrilldown
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin size-12 border-4 border-primary/30 border-t-primary rounded-full mx-auto mb-4"></div>
-            <p className="text-slate-500">Loading feature data...</p>
+            <p className="text-slate-500">Loading model data...</p>
           </div>
         </div>
       ) : (
@@ -125,13 +119,13 @@ const ModuleDrilldown = ({ moduleNumber, serialNumber, onBack }: ModuleDrilldown
                 <svg className="w-full h-full" viewBox="0 0 1000 260" preserveAspectRatio="xMidYMid meet">
                   {/* Grid lines */}
                   {[0, 1, 2, 3, 4].map(i => (
-                    <line key={i} x1="80" y1={40 + i * 50} x2="980" y2={40 + i * 50} 
+                    <line key={i} x1="80" y1={40 + i * 50} x2="980" y2={40 + i * 50}
                       stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
                   ))}
-                  
+
                   {/* Y-axis labels */}
                   <text x="70" y="45" className="text-sm fill-slate-600 font-medium" textAnchor="end">{maxPower.toFixed(0)}W</text>
-                  <text x="70" y="140" className="text-sm fill-slate-600 font-medium" textAnchor="end">{(maxPower/2).toFixed(0)}W</text>
+                  <text x="70" y="140" className="text-sm fill-slate-600 font-medium" textAnchor="end">{(maxPower / 2).toFixed(0)}W</text>
                   <text x="70" y="235" className="text-sm fill-slate-600 font-medium" textAnchor="end">0W</text>
 
                   {/* Lines */}
@@ -177,7 +171,7 @@ const ModuleDrilldown = ({ moduleNumber, serialNumber, onBack }: ModuleDrilldown
 
                   {/* X-axis labels */}
                   {chartData.map((d, i) => (
-                    <text key={i} x={80 + (i * 900 / 9)} y="258" 
+                    <text key={i} x={80 + (i * 900 / 9)} y="258"
                       className="text-sm fill-slate-600 font-medium" textAnchor="middle">
                       M{d.module}
                     </text>
@@ -217,13 +211,13 @@ const ModuleDrilldown = ({ moduleNumber, serialNumber, onBack }: ModuleDrilldown
                 <svg className="w-full h-full" viewBox="0 0 1000 260" preserveAspectRatio="xMidYMid meet">
                   {/* Grid lines */}
                   {[0, 1, 2, 3, 4].map(i => (
-                    <line key={i} x1="80" y1={40 + i * 50} x2="980" y2={40 + i * 50} 
+                    <line key={i} x1="80" y1={40 + i * 50} x2="980" y2={40 + i * 50}
                       stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
                   ))}
-                  
+
                   {/* Y-axis labels */}
                   <text x="70" y="45" className="text-sm fill-slate-600 font-medium" textAnchor="end">{maxVoltage.toFixed(1)}V</text>
-                  <text x="70" y="140" className="text-sm fill-slate-600 font-medium" textAnchor="end">{((maxVoltage+minVoltage)/2).toFixed(1)}V</text>
+                  <text x="70" y="140" className="text-sm fill-slate-600 font-medium" textAnchor="end">{((maxVoltage + minVoltage) / 2).toFixed(1)}V</text>
                   <text x="70" y="235" className="text-sm fill-slate-600 font-medium" textAnchor="end">{minVoltage.toFixed(1)}V</text>
 
                   {/* Lines */}
@@ -269,7 +263,7 @@ const ModuleDrilldown = ({ moduleNumber, serialNumber, onBack }: ModuleDrilldown
 
                   {/* X-axis labels */}
                   {chartData.map((d, i) => (
-                    <text key={i} x={80 + (i * 900 / 9)} y="258" 
+                    <text key={i} x={80 + (i * 900 / 9)} y="258"
                       className="text-sm fill-slate-600 font-medium" textAnchor="middle">
                       M{d.module}
                     </text>
@@ -309,13 +303,13 @@ const ModuleDrilldown = ({ moduleNumber, serialNumber, onBack }: ModuleDrilldown
                 <svg className="w-full h-full" viewBox="0 0 1000 260" preserveAspectRatio="xMidYMid meet">
                   {/* Grid lines */}
                   {[0, 1, 2, 3, 4].map(i => (
-                    <line key={i} x1="80" y1={40 + i * 50} x2="980" y2={40 + i * 50} 
+                    <line key={i} x1="80" y1={40 + i * 50} x2="980" y2={40 + i * 50}
                       stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
                   ))}
-                  
+
                   {/* Y-axis labels */}
                   <text x="70" y="45" className="text-sm fill-slate-600 font-medium" textAnchor="end">{maxPowerEFC.toFixed(1)}</text>
-                  <text x="70" y="140" className="text-sm fill-slate-600 font-medium" textAnchor="end">{(maxPowerEFC/2).toFixed(1)}</text>
+                  <text x="70" y="140" className="text-sm fill-slate-600 font-medium" textAnchor="end">{(maxPowerEFC / 2).toFixed(1)}</text>
                   <text x="70" y="235" className="text-sm fill-slate-600 font-medium" textAnchor="end">0</text>
 
                   {/* Lines */}
@@ -361,7 +355,7 @@ const ModuleDrilldown = ({ moduleNumber, serialNumber, onBack }: ModuleDrilldown
 
                   {/* X-axis labels */}
                   {chartData.map((d, i) => (
-                    <text key={i} x={80 + (i * 900 / 9)} y="258" 
+                    <text key={i} x={80 + (i * 900 / 9)} y="258"
                       className="text-sm fill-slate-600 font-medium" textAnchor="middle">
                       M{d.module}
                     </text>

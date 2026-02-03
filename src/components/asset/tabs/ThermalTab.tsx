@@ -5,17 +5,17 @@ import { useDailyFeatures } from '../../../hooks/useFeatures'
 const ThermalTab = () => {
   const { assetId } = useParams<{ assetId: string }>()
   const [selectedDay, setSelectedDay] = useState(1)
-  
+
   const droneId = `ORCA${assetId?.padStart(3, '0')}`
-  const { data, loading, error } = useDailyFeatures(droneId, selectedDay)
-  
+  const { data, loading, error: _error } = useDailyFeatures(droneId, selectedDay)
+
   const features = data?.features
 
   // Extract thermal metrics - fallback to "Data unavailable" if columns don't exist
   const maxTemp = features?.max_pack_temp_C != null ? features.max_pack_temp_C.toFixed(1) : 'N/A'
   const avgTemp = features?.avg_pack_temp_C != null ? features.avg_pack_temp_C.toFixed(1) : 'N/A'
-  const minTemp = (features?.avg_pack_temp_C != null && features?.max_temp_delta_C != null) 
-    ? (features.avg_pack_temp_C - features.max_temp_delta_C).toFixed(1) 
+  const minTemp = (features?.avg_pack_temp_C != null && features?.max_temp_delta_C != null)
+    ? (features.avg_pack_temp_C - features.max_temp_delta_C).toFixed(1)
     : 'N/A'
   const deltaT = features?.max_temp_delta_C != null ? features.max_temp_delta_C.toFixed(1) : 'N/A'
   const thermalRisk = features?.thermal_risk_flag === true
@@ -25,8 +25,8 @@ const ThermalTab = () => {
       {/* Header with Day Selector */}
       <div className="flex items-end justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Thermal Intelligence</h2>
-          <p className="text-slate-500 mt-1">Real-time Battery Thermal Monitoring</p>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Thermal Risk Prediction</h2>
+          <p className="text-slate-500 mt-1">AI-driven thermal state estimation and runaway forecasting</p>
         </div>
         <div className="flex items-center gap-3">
           {loading && <span className="text-sm text-slate-500">Loading...</span>}
@@ -117,6 +117,9 @@ const ThermalTab = () => {
               <span className="text-4xl font-bold text-slate-900">0.01%</span>
               <span className="text-sm font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-lg">LOW</span>
             </div>
+            <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">
+              Forecast based on mission profile and recent charging interventions
+            </p>
           </div>
           <div className="w-full bg-slate-200 h-1.5 rounded-full mt-6 overflow-hidden">
             <div className="bg-primary h-full rounded-full" style={{ width: '1%' }}></div>

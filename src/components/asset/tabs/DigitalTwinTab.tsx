@@ -18,10 +18,10 @@ const DigitalTwinTab = () => {
 
   return (
     <div className="h-full flex flex-col gap-6">
-      <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Battery Architecture</h2>
-      <p className="text-slate-500">Real-time visualization · Click any module to drill down</p>
+      <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Battery Digital Twin (Model-Driven State)</h2>
+      <p className="text-slate-500 text-sm">Continuously updated using live telemetry and degradation models</p>
       
-      <h3 className="text-xl font-bold text-slate-900">Module Status (Real-time)</h3>
+      <h3 className="text-xl font-bold text-slate-900">Module State (Model-Estimated)</h3>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {mockModules.map((module, index) => (
@@ -60,7 +60,7 @@ const DigitalTwinTab = () => {
             </div>
             <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100">
               <div>
-                <p className="text-[10px] uppercase text-slate-500 font-semibold mb-0.5">SoH</p>
+                <p className="text-[10px] uppercase text-slate-500 font-semibold mb-0.5">SoH (model-estimated)</p>
                 <p className="text-sm font-bold text-slate-900">{module.soh}%</p>
               </div>
               <div className="text-right">

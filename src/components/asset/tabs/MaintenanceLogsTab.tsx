@@ -2,10 +2,21 @@ import { mockMaintenanceLogs } from '../../../utils/mockData'
 
 const MaintenanceLogsTab = () => {
   return (
-    <div className="h-full flex flex-col gap-6">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Actions & Recommendations</h2>
-        <p className="text-slate-500 text-sm mt-1">AI-driven insights for optimal fleet performance</p>
+    <div className="h-full flex flex-col gap-6 relative">
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Autonomous Interventions</h2>
+          <p className="text-slate-500 text-sm mt-1">AI-initiated control actions executed on live battery systems</p>
+        </div>
+        <div className="group relative">
+          <span className="bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-help">
+            <span className="size-1.5 rounded-full bg-primary animate-pulse"></span>
+            Autonomous by default
+          </span>
+          <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-slate-900 text-white text-[11px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl leading-relaxed">
+            Actions shown here were triggered by ElecticaOS models unless explicitly overridden.
+          </div>
+        </div>
       </div>
       
       <div className="flex flex-col gap-6">

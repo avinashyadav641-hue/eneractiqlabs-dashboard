@@ -1,0 +1,25 @@
+# # FastAPI Analytics Backend
+# # Python 3.10+
+
+# # Web framework
+# fastapi==0.109.2
+# uvicorn[standard]==0.27.1
+
+# # Database
+# duckdb==0.10.0
+
+# # Settings
+# pydantic-settings==2.1.0
+# python-dotenv==1.0.1
+
+# # Production server (optional, for gunicorn deployment)
+# gunicorn==21.2.0
+fastapi
+uvicorn
+duckdb
+pyarrow
+python-dotenv
+pydantic
+pydantic-settings
+
+

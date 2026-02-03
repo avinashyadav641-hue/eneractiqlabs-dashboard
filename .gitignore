@@ -41,3 +41,18 @@ backend/prisma/*.db-journal
 backend/node_modules/
 backend/dist/
 backend/.env
+.vercel
+
+# SSH Keys - NEVER commit
+*.pem
+
+# Python virtual environments
+venv/
+__pycache__/
+*.pyc
+
+# Data files
+*.parquet
+*.csv
+backend/data/
+backend-analytics/data/

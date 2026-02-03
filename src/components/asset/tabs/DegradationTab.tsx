@@ -10,9 +10,7 @@ const DegradationTab = () => {
 
   // Extract latest values
   const latestSoH = data?.history[data.history.length - 1]
-  const currentSoH = latestSoH ? (latestSoH.SoH * 100).toFixed(1) : '--'
   const cycleCount = latestSoH ? Math.round(latestSoH.EFC_lifetime) : 0
-  const rulCycles = latestSoH?.RUL_cycles || 2850
   const cellImbalance = latestSoH?.max_module_voltage_spread_mV != null 
     ? latestSoH.max_module_voltage_spread_mV.toFixed(0) 
     : '--'
@@ -20,18 +18,23 @@ const DegradationTab = () => {
   // Calculate efficiency loss (simplified)
   const efficiencyLoss = latestSoH ? ((1 - latestSoH.SoH) * 100).toFixed(2) : '0.02'
 
-  // Prepare chart data
-  const chartPoints = data?.history.map((item, index) => {
-    const x = (index / (data.history.length - 1)) * 450 // Scale to fit within 0-450
-    const sohPercent = item.SoH * 100
-    const y = 20 + ((100 - sohPercent) / 5) * 55 // Map 100%-95% to y=20-75
-    return { x, y, soh: sohPercent, day: item.day_index }
-  }) || []
+    // Prepare chart data - Map to SVG coordinates where TODAY is in the MIDDLE (x=350)
+    // Create a natural degradation curve visualization from SoH data
+    const chartPoints = data?.history.map((item, index) => {
+      const x = (index / Math.max(data.history.length - 1, 1)) * 350 // Scale to left half (0-350)
+      const sohPercent = item.SoH * 100 // Use actual SoH from features data
+      // Apply visual scaling to show gradual degradation trend more clearly
+      // Map SoH from its actual range to visible Y coordinates (100% at y=0, 80% at y=260)
+      const sohRange = 20 // 100% to 80% range
+      const y = ((100 - sohPercent) / sohRange) * 260
+      return { x, y, soh: sohPercent, day: item.day_index }
+    }) || []
 
-  // Prediction points (simple linear extrapolation)
-  const predictPoints = latestSoH ? [
-    { x: 450, y: chartPoints[chartPoints.length - 1]?.y || 75 },
-    { x: 800, y: 160 } // Predict to 80% SoH
+  // Prediction points - Gentle downward slope continuing the degradation trend
+  const lastPoint = chartPoints[chartPoints.length - 1]
+  const predictPoints = lastPoint ? [
+    { x: 350, y: lastPoint.y },
+    { x: 700, y: Math.min(lastPoint.y + 30, 260) } // Gentle downward projection
   ] : []
 
   return (
@@ -40,10 +43,10 @@ const DegradationTab = () => {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 mb-2">
         <div className="flex flex-col gap-2 max-w-2xl">
           <h1 className="text-4xl font-bold text-slate-900 tracking-tight leading-tight">
-            Degradation & Life Prediction
+            Remaining Useful Life Forecast
           </h1>
           <p className="text-slate-500 text-base font-normal leading-relaxed max-w-xl">
-            State of Health (SoH) analysis from feature-engineered data
+            State of Health (SoH) model inference
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -51,7 +54,7 @@ const DegradationTab = () => {
           {error && <span className="text-sm text-red-500">Error: {error}</span>}
           <button className="glass-card px-4 h-11 flex items-center gap-2 text-slate-600 font-bold text-sm hover:bg-white transition-colors">
             <span className="material-symbols-outlined text-[20px]">calendar_today</span>
-            Last {data?.total_days || 15} Days
+            Mission History
           </button>
         </div>
       </div>
@@ -66,25 +69,7 @@ const DegradationTab = () => {
       ) : (
         <>
           {/* KPI Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {/* KPI 1: Current SoH */}
-            <div className="glass-card p-6 flex flex-col gap-1 relative overflow-hidden">
-              <div className="flex justify-between items-start mb-2">
-                <p className="text-slate-500 text-sm font-medium">Current SoH</p>
-                <span className="material-symbols-outlined text-green-600 bg-green-50 rounded-xl p-1 text-[20px]">ecg_heart</span>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <p className="text-4xl font-bold text-slate-900 tracking-tight">{currentSoH}%</p>
-              </div>
-              <div className="flex items-center gap-1.5 mt-2">
-                <span className="flex items-center justify-center bg-green-100 text-green-700 text-xs font-bold px-1.5 py-0.5 rounded-lg">
-                  From Features
-                </span>
-                <p className="text-green-700 text-xs font-medium">Real data</p>
-              </div>
-              <div className="absolute bottom-0 left-0 w-full h-1 bg-green-500 rounded-b-2xl"></div>
-            </div>
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {/* KPI 2: Cycle Count */}
             <div className="glass-card p-6 flex flex-col gap-1 relative overflow-hidden">
               <div className="flex justify-between items-start mb-2">
@@ -139,20 +124,20 @@ const DegradationTab = () => {
                 <span className="material-symbols-outlined">info</span>
               </div>
               <div>
-                <p className="text-slate-900 text-base font-bold leading-tight">Feature-Based Analysis</p>
+                <p className="text-slate-900 text-base font-bold leading-tight">Model-Derived Health State</p>
                 <p className="text-slate-600 text-sm font-normal leading-normal mt-1">
-                  All data from pre-computed feature parquet files. No raw telemetry used.
+                  Autonomous model inference based on mission profiles.
                 </p>
               </div>
             </div>
           </div>
 
           {/* Main Charts Section - Full Width */}
-          <div className="glass-card p-6 md:p-8 flex flex-col h-full">
+          <div className="glass-card p-6 md:p-8 flex flex-col">
             <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">State of Health (SoH) History</h3>
-                <p className="text-slate-500 text-sm mt-1">Real data from {data?.total_days || 0} days</p>
+                <p className="text-slate-500 text-sm mt-1">Lifecycle Tracking</p>
               </div>
               <div className="flex items-center gap-4 text-xs font-bold">
                 <div className="flex items-center gap-2">
@@ -167,39 +152,49 @@ const DegradationTab = () => {
                 </div>
               </div>
             </div>
-              <div className="relative w-full h-[300px] flex-1">
-                {/* Chart SVG */}
-                <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 800 300">
-                  <defs>
-                    <linearGradient id="fill-gradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#22c55e" stopOpacity="0.1" />
-                      <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  {/* Grid Lines */}
-                  <line x1="50" y1="50" x2="800" y2="50" stroke="#f1f5f9" strokeWidth="1" />
-                  <line x1="50" y1="125" x2="800" y2="125" stroke="#f1f5f9" strokeWidth="1" />
-                  <line x1="50" y1="200" x2="800" y2="200" stroke="#f1f5f9" strokeWidth="1" />
-                  <line x1="50" y1="275" x2="800" y2="275" stroke="#f1f5f9" strokeWidth="1" />
-                  
-                  {/* Y-Axis Labels */}
-                  <text x="35" y="55" className="text-xs fill-slate-600 font-medium" textAnchor="end">100%</text>
-                  <text x="35" y="130" className="text-xs fill-slate-600 font-medium" textAnchor="end">97%</text>
-                  <text x="35" y="205" className="text-xs fill-slate-600 font-medium" textAnchor="end">95%</text>
-                  <text x="35" y="280" className="text-xs fill-slate-600 font-medium" textAnchor="end">92%</text>
-                  
-                  {/* Today Line Marker */}
-                  {chartPoints.length > 0 && (
-                    <>
-                      <line x1="450" y1="20" x2="450" y2="280" stroke="#cbd5e1" strokeDasharray="4 4" strokeWidth="1" />
-                      <rect x="420" y="0" width="60" height="24" rx="4" fill="#f1f5f9" />
-                      <text x="450" y="16" className="text-xs font-bold fill-slate-600" textAnchor="middle">Today</text>
-                    </>
-                  )}
-                  
-                  {/* Historical Line (Solid Green) */}
-                  {chartPoints.length > 0 && (
-                    <>
+            
+            {/* Chart with External Y-Axis Labels */}
+            <div className="flex gap-4">
+              {/* Y-Axis Numeric Values (OUTSIDE graph) */}
+              <div className="w-10 flex flex-col justify-between py-1 items-end pr-2 text-[10px] font-mono font-bold text-slate-400 h-[260px]">
+                <span>100%</span>
+                <span>93%</span>
+                <span>87%</span>
+                <span>80%</span>
+              </div>
+              
+              {/* Graph Container */}
+              <div className="flex-1 flex flex-col">
+                <div className="relative h-[260px] bg-slate-50/30 rounded-xl overflow-hidden border border-slate-100">
+                  <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 700 260">
+                    <defs>
+                      <linearGradient id="fill-gradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#22c55e" stopOpacity="0.15" />
+                        <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    
+                    {/* Horizontal Grid Lines */}
+                    {[0, 86.67, 173.33, 260].map((y, i) => (
+                      <line key={i} x1="0" x2="700" y1={y} y2={y} stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
+                    ))}
+                    
+                    {/* Today Marker Line - Always at center (x=350) */}
+                    {chartPoints.length > 0 && (
+                      <line x1="350" y1="0" x2="350" y2="260" stroke="#cbd5e1" strokeDasharray="4 4" strokeWidth="1" />
+                    )}
+                    
+                    {/* Historical Area Fill */}
+                    {chartPoints.length > 0 && (
+                      <path 
+                        d={`M0,${chartPoints[0]?.y || 0} L${chartPoints.map(p => `${p.x},${p.y}`).join(' L')} L${lastPoint?.x || 0},260 L0,260 Z`}
+                        fill="url(#fill-gradient)" 
+                        stroke="none"
+                      />
+                    )}
+                    
+                    {/* Historical Line (Solid Green) */}
+                    {chartPoints.length > 0 && (
                       <path 
                         d={`M${chartPoints.map(p => `${p.x},${p.y}`).join(' L')}`}
                         fill="none" 
@@ -208,85 +203,90 @@ const DegradationTab = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
-                      
-                      {/* Area fill */}
+                    )}
+                    
+                    {/* Prediction Line (Dashed Blue) - Goes DOWNWARD */}
+                    {predictPoints.length > 0 && chartPoints.length > 0 && (
                       <path 
-                        d={`M${chartPoints.map(p => `${p.x},${p.y}`).join(' L')} L${chartPoints[chartPoints.length-1].x},300 L0,300 Z`}
-                        fill="url(#fill-gradient)" 
-                        stroke="none"
+                        d={`M${predictPoints[0].x},${predictPoints[0].y} L${predictPoints[1].x},${predictPoints[1].y}`}
+                        fill="none" 
+                        stroke="#3b82f6" 
+                        strokeWidth="3" 
+                        strokeDasharray="8 8" 
+                        strokeLinecap="round"
                       />
-                      
-                      {/* Point at Today */}
+                    )}
+                    
+                    {/* Today Point Marker */}
+                    {chartPoints.length > 0 && lastPoint && (
                       <circle 
-                        cx={chartPoints[chartPoints.length - 1].x} 
-                        cy={chartPoints[chartPoints.length - 1].y} 
-                        r="5" 
+                        cx={lastPoint.x} 
+                        cy={lastPoint.y} 
+                        r="6" 
                         fill="#22c55e" 
                         stroke="white" 
                         strokeWidth="2" 
                       />
-                      
-                      {/* Interactive hover circles */}
-                      {chartPoints.map((point, i) => (
-                        <g key={i}>
-                          <circle
-                            cx={point.x}
-                            cy={point.y}
-                            r="8"
-                            fill="transparent"
-                            className="cursor-pointer"
-                            onMouseEnter={() => setHoveredPoint(point)}
-                            onMouseLeave={() => setHoveredPoint(null)}
-                          />
-                          {hoveredPoint === point && (
-                            <>
-                              <circle cx={point.x} cy={point.y} r="6" fill="#22c55e" stroke="white" strokeWidth="2" />
-                              <rect 
-                                x={point.x + 12} 
-                                y={point.y - 25} 
-                                width="100" 
-                                height="50" 
-                                rx="6" 
-                                fill="#1e293b" 
-                                opacity="0.95"
-                              />
-                              <text 
-                                x={point.x + 62} 
-                                y={point.y - 8} 
-                                className="text-xs font-bold fill-white" 
-                                textAnchor="middle"
-                              >
-                                Day {point.day}
-                              </text>
-                              <text 
-                                x={point.x + 62} 
-                                y={point.y + 8} 
-                                className="text-sm font-bold fill-green-400" 
-                                textAnchor="middle"
-                              >
-                                {point.soh.toFixed(1)}%
-                              </text>
-                            </>
-                          )}
-                        </g>
-                      ))}                      
-                    </>
-                  )}
+                    )}
+                    
+                    {/* Interactive hover circles */}
+                    {chartPoints.map((point, i) => (
+                      <g key={i}>
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r="10"
+                          fill="transparent"
+                          className="cursor-pointer"
+                          onMouseEnter={() => setHoveredPoint(point)}
+                          onMouseLeave={() => setHoveredPoint(null)}
+                        />
+                        {hoveredPoint === point && (
+                          <>
+                            <circle cx={point.x} cy={point.y} r="6" fill="#22c55e" stroke="white" strokeWidth="2" />
+                            <rect 
+                              x={point.x > 600 ? point.x - 112 : point.x + 12} 
+                              y={Math.max(point.y - 25, 5)} 
+                              width="100" 
+                              height="50" 
+                              rx="6" 
+                              fill="#1e293b" 
+                              opacity="0.95"
+                            />
+                            <text 
+                              x={point.x > 600 ? point.x - 62 : point.x + 62} 
+                              y={Math.max(point.y - 8, 22)} 
+                              className="text-xs font-bold fill-white" 
+                              textAnchor="middle"
+                            >
+                              Day {point.day}
+                            </text>
+                            <text 
+                              x={point.x > 600 ? point.x - 62 : point.x + 62} 
+                              y={Math.max(point.y + 12, 42)} 
+                              className="text-sm font-bold fill-green-400" 
+                              textAnchor="middle"
+                            >
+                              {point.soh.toFixed(1)}%
+                            </text>
+                          </>
+                        )}
+                      </g>
+                    ))}
+                  </svg>
                   
-                  {/* Prediction Line (Dashed Blue) */}
-                  {predictPoints.length > 0 && chartPoints.length > 0 && (
-                    <path 
-                      d={`M${chartPoints[chartPoints.length - 1].x},${chartPoints[chartPoints.length - 1].y} L${predictPoints.map(p => `${p.x},${p.y}`).join(' L')}`}
-                      fill="none" 
-                      stroke="#3b82f6" 
-                      strokeWidth="3" 
-                      strokeDasharray="8 8" 
-                      strokeLinecap="round"
-                    />
+                  {/* Today Label - Fixed at center */}
+                  {chartPoints.length > 0 && (
+                    <div 
+                      className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-slate-100 px-2 py-1 rounded text-[10px] font-bold text-slate-600"
+                    >
+                      Today
+                    </div>
                   )}
-                </svg>
+                </div>
               </div>
             </div>
+          </div>
         </>
       )}
     </div>

@@ -6,6 +6,7 @@ import HPPCTab from './tabs/HPPCTab'
 import ThermalTab from './tabs/ThermalTab'
 import DegradationTab from './tabs/DegradationTab'
 import DigitalTwinTab from './tabs/DigitalTwinTab'
+import ChargingSessionTab from './tabs/ChargingSessionTab'
 import MaintenanceLogsTab from './tabs/MaintenanceLogsTab'
 
 const AssetWorkspace = () => {
@@ -13,12 +14,13 @@ const AssetWorkspace = () => {
   const [activeTab, setActiveTab] = useState<TabType>('overview')
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: 'dashboard' },
-    { id: 'hppc', label: 'HPPC Intelligence', icon: 'speed' },
-    { id: 'thermal', label: 'Thermal Analysis', icon: 'thermometer' },
-    { id: 'degradation', label: 'Degradation & Life', icon: 'history' },
-    { id: 'twin', label: 'Digital Twin', icon: 'view_in_ar' },
-    { id: 'logs', label: 'Maintenance Logs', icon: 'article' },
+    { id: 'overview', label: 'System Health', icon: 'dashboard' },
+    { id: 'hppc', label: 'Dynamic Power Capability Model', icon: 'speed' },
+    { id: 'thermal', label: 'Thermal Risk Prediction', icon: 'thermometer' },
+    { id: 'degradation', label: 'Remaining Useful Life Forecast', icon: 'history' },
+    { id: 'twin', label: 'Battery Digital Twin', icon: 'view_in_ar' },
+    { id: 'charging', label: 'Autonomous Charging Control', icon: 'battery_charging_full' },
+    { id: 'logs', label: 'Intervention History', icon: 'article' },
   ]
 
   const renderTabContent = () => {
@@ -33,6 +35,8 @@ const AssetWorkspace = () => {
         return <DegradationTab />
       case 'twin':
         return <DigitalTwinTab />
+      case 'charging':
+        return <ChargingSessionTab />
       case 'logs':
         return <MaintenanceLogsTab />
       default:

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { mockFleetKPI, mockDrones } from '../../utils/mockData'
 import DroneCard from './DroneCard'
-import type { Drone } from '../../types'
-import type { SoHFeatures } from '../../types/features'
+import type { Drone, FleetKPI } from '../../types'
 
 type FilterType = 'all' | 'active' | 'critical'
 
@@ -11,14 +10,19 @@ const FleetDashboard = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
   const [liveAssets, setLiveAssets] = useState<Drone[]>([])
   const [loading, setLoading] = useState(true)
+  const [kpiData, setKpiData] = useState<FleetKPI>(mockFleetKPI)
+  const [apiConnected, setApiConnected] = useState(false)
 
-  // Fetch all ORCA drones from feature API
+  // Fetch data from analytics API
   useEffect(() => {
-    const fetchAllDrones = async () => {
+    const fetchData = async () => {
       try {
+        const API_URL = import.meta.env.VITE_API_URL || 'https://api.electica.in'
+
+        // Fetch snapshots for ORCA001-ORCA010
         const dronePromises = Array.from({ length: 10 }, (_, i) => {
           const droneId = `ORCA${String(i + 1).padStart(3, '0')}`
-          return fetch(`http://localhost:5001/api/features/drone/${droneId}/snapshot`)
+          return fetch(`${API_URL}/drone/${droneId}/snapshot`)
             .then(res => res.ok ? res.json() : null)
             .catch(() => null)
         })
@@ -27,38 +31,53 @@ const FleetDashboard = () => {
         const transformed: Drone[] = results
           .filter(r => r !== null)
           .map((item: any) => {
-            const droneId = item.drone_id.replace('ORCA', '').padStart(3, '0')
-            const mockDrone = mockDrones.find(d => d.id === droneId)
-            const hasFault = item.daily_features.thermal_risk_flag || item.daily_features.voltage_imbalance_flag
-            
+            const droneId = item.drone_id
+            const daily = item.daily_features || {}
+            const soh = item.soh_snapshot
+            const hasFault = daily.thermal_risk_flag || daily.voltage_imbalance_flag
+
             return {
-              id: droneId,
-              name: `Orca-${item.drone_id.replace('ORCA', '')}`,
-              status: hasFault ? 'fault' : (mockDrone?.status || 'charging') as any,
-              soh: item.soh_snapshot ? parseFloat((item.soh_snapshot.SoH * 100).toFixed(1)) : 98,
-              soc: mockDrone?.soc || 72,
-              voltage: item.daily_features.avg_pack_voltage_V || item.daily_features.avg_cell_voltage_V * 120,
-              temperature: item.daily_features.avg_pack_temp_C || 42,
-              cycleCount: Math.round(item.soh_snapshot?.EFC_lifetime || 0),
+              id: droneId.replace('ORCA', ''),
+              name: `Orca-${droneId.replace('ORCA', '')}`,
+              status: hasFault ? 'fault' : 'idle' as any,
+              soh: soh?.SoH ? parseFloat((soh.SoH * 100).toFixed(1)) : 95,
+              soc: 80,
+              voltage: daily.avg_pack_voltage_V || daily.avg_cell_voltage_V * 120 || 400,
+              temperature: daily.avg_pack_temp_C || 40,
+              cycleCount: Math.round(soh?.EFC_lifetime || 0),
             }
           })
 
+        // Update KPIs from fetched data
+        const activeFlights = transformed.filter(d => d.status === 'flight').length
+        const charging = transformed.filter(d => d.status === 'charging').length
+        const critical = transformed.filter(d => d.status === 'fault' || d.soh < 85).length
+
+        setKpiData({
+          fleetAvailability: transformed.length > 0 ? 90 : 0,
+          activeFlights,
+          charging,
+          criticalAlerts: critical,
+        })
+
         setLiveAssets(transformed)
+        setApiConnected(true)
+        console.log('✅ Connected to API:', import.meta.env.VITE_API_URL)
       } catch (error) {
         console.warn('⚠️ Backend unavailable, using mock data:', error)
+        setApiConnected(false)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchAllDrones()
+    fetchData()
   }, [])
 
-  // Combine live assets with mock drones (for any missing)
-  const allDrones = [
-    ...liveAssets,
-    ...mockDrones.filter(d => !liveAssets.find(la => la.id === d.id)),
-  ]
+  // Use live data if API connected, otherwise fall back to mock
+  const allDrones = apiConnected && liveAssets.length > 0
+    ? liveAssets
+    : mockDrones
 
   // Filter drones based on selected filter
   const filteredDrones = allDrones.filter(drone => {
@@ -70,6 +89,14 @@ const FleetDashboard = () => {
 
   return (
     <div className="flex flex-col gap-8 fade-in">
+      {/* API Connection Status */}
+      {apiConnected && (
+        <div className="bg-primary/10 text-primary text-sm px-4 py-2 rounded-lg flex items-center gap-2">
+          <span className="material-symbols-outlined text-[16px]">cloud_done</span>
+          Connected to live API
+        </div>
+      )}
+
       {/* Header & KPIs */}
       <div className="flex flex-col gap-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -94,7 +121,7 @@ const FleetDashboard = () => {
             </div>
             <div className="z-10">
               <div className="text-3xl font-bold text-slate-900 glow-text tracking-tight">
-                {mockFleetKPI.fleetAvailability}%
+                {kpiData.fleetAvailability}%
               </div>
               <div className="text-primary text-xs font-medium flex items-center gap-1 mt-1">
                 <span className="material-symbols-outlined text-[14px]">trending_up</span> +2.4% vs
@@ -112,7 +139,7 @@ const FleetDashboard = () => {
             </div>
             <div className="z-10">
               <div className="text-3xl font-bold text-slate-900 tracking-tight">
-                {mockFleetKPI.activeFlights}
+                {kpiData.activeFlights}
               </div>
               <div className="text-electric-blue text-xs font-medium flex items-center gap-1 mt-1">
                 On schedule
@@ -129,7 +156,7 @@ const FleetDashboard = () => {
             </div>
             <div className="z-10">
               <div className="text-3xl font-bold text-slate-900 tracking-tight">
-                {mockFleetKPI.charging}
+                {kpiData.charging}
               </div>
               <div className="text-slate-500 text-xs font-medium flex items-center gap-1 mt-1">
                 Avg. time to full: 24m
@@ -146,7 +173,7 @@ const FleetDashboard = () => {
             </div>
             <div className="z-10">
               <div className="text-3xl font-bold text-critical glow-text-critical tracking-tight">
-                {mockFleetKPI.criticalAlerts}
+                {kpiData.criticalAlerts}
               </div>
               <div className="text-critical text-xs font-medium flex items-center gap-1 mt-1">
                 Requires immediate action
@@ -158,58 +185,65 @@ const FleetDashboard = () => {
 
       {/* Filters */}
       <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
-        <button 
+        <button
           onClick={() => setActiveFilter('all')}
-          className={`glass-card px-5 py-2 rounded-xl text-sm font-medium border shadow-lg flex items-center gap-2 whitespace-nowrap transition-colors ${
-            activeFilter === 'all' 
-              ? 'bg-slate-800 text-white border-slate-700 shadow-slate-900/10' 
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white'
-          }`}
+          className={`glass-card px-5 py-2 rounded-xl text-sm font-medium border shadow-lg flex items-center gap-2 whitespace-nowrap transition-colors ${activeFilter === 'all'
+            ? 'bg-slate-800 text-white border-slate-700 shadow-slate-900/10'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-white'
+            }`}
         >
           <span className="material-symbols-outlined text-[18px]">grid_view</span> All Drones
         </button>
-        <button 
+        <button
           onClick={() => setActiveFilter('active')}
-          className={`glass-card px-5 py-2 rounded-xl text-sm font-medium border flex items-center gap-2 whitespace-nowrap transition-colors ${
-            activeFilter === 'active'
-              ? 'bg-electric-blue text-white border-electric-blue shadow-lg shadow-electric-blue/10'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white'
-          }`}
+          className={`glass-card px-5 py-2 rounded-xl text-sm font-medium border flex items-center gap-2 whitespace-nowrap transition-colors ${activeFilter === 'active'
+            ? 'bg-electric-blue text-white border-electric-blue shadow-lg shadow-electric-blue/10'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-white'
+            }`}
         >
           <span className="material-symbols-outlined text-[18px]">flight</span>{' '}
           Active Flights
         </button>
-        <button 
+        <button
           onClick={() => setActiveFilter('critical')}
-          className={`glass-card px-5 py-2 rounded-xl text-sm font-medium border flex items-center gap-2 whitespace-nowrap transition-colors ${
-            activeFilter === 'critical'
-              ? 'bg-critical text-white border-critical shadow-lg shadow-critical/10'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white'
-          }`}
+          className={`glass-card px-5 py-2 rounded-xl text-sm font-medium border flex items-center gap-2 whitespace-nowrap transition-colors ${activeFilter === 'critical'
+            ? 'bg-critical text-white border-critical shadow-lg shadow-critical/10'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-white'
+            }`}
         >
           <span className="material-symbols-outlined text-[18px]">error</span>{' '}
           Critical Alerts
         </button>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-16">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      )}
+
       {/* Drone Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-12">
-        {filteredDrones.length > 0 ? (
-          filteredDrones.map(drone => (
-            <Link key={drone.id} to={`/asset/${drone.id}`}>
-              <DroneCard drone={drone} />
-            </Link>
-          ))
-        ) : (
-          <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-            <span className="material-symbols-outlined text-6xl text-slate-300 mb-4">search_off</span>
-            <h3 className="text-xl font-semibold text-slate-600 mb-2">No drones found</h3>
-            <p className="text-slate-500">Try adjusting your filter criteria</p>
-          </div>
-        )}
-      </div>
+      {!loading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-12">
+          {filteredDrones.length > 0 ? (
+            filteredDrones.map(drone => (
+              <Link key={drone.id} to={`/asset/${drone.id}`}>
+                <DroneCard drone={drone} />
+              </Link>
+            ))
+          ) : (
+            <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+              <span className="material-symbols-outlined text-6xl text-slate-300 mb-4">search_off</span>
+              <h3 className="text-xl font-semibold text-slate-600 mb-2">No drones found</h3>
+              <p className="text-slate-500">Try adjusting your filter criteria</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
 export default FleetDashboard
+

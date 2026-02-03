@@ -132,7 +132,7 @@ export const mockMaintenanceLogs: MaintenanceLog[] = [
     reason: 'Exceeding thermal variance threshold during climb phase.',
     confidence: 99.2,
     impact: 'Prevents thermal runaway risk',
-    action: 'Initiate Cooling Protocol',
+    action: 'Execute Cooling Override',
   },
   {
     id: '2',
@@ -142,7 +142,7 @@ export const mockMaintenanceLogs: MaintenanceLog[] = [
     reason: 'Minor drift detected in sub-array B voltage output.',
     confidence: 94.0,
     impact: '+2.5% Range Efficiency',
-    action: 'Calibrate at Next Charge',
+    action: 'Execute Voltage Recalibration',
   },
   {
     id: '3',
@@ -152,7 +152,7 @@ export const mockMaintenanceLogs: MaintenanceLog[] = [
     reason: 'Logged cycles deviate from estimated usage pattern.',
     confidence: 88.5,
     impact: 'Possible -40 Cycles Lifetime',
-    action: 'Review Logs',
+    action: 'Review Intervention History',
   },
   {
     id: '4',
@@ -162,6 +162,6 @@ export const mockMaintenanceLogs: MaintenanceLog[] = [
     reason: 'Ambient temperature forecast > 35°C for next scheduled routes.',
     confidence: 96.8,
     impact: 'Reduces peak temp by 8°C',
-    action: 'Adjust Cooling Schedule',
+    action: 'Apply Charging Policy Update',
   },
 ]

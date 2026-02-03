@@ -75,4 +75,4 @@ export interface MaintenanceLog {
   action: string
 }
 
-export type TabType = 'overview' | 'hppc' | 'thermal' | 'degradation' | 'twin' | 'logs'
+export type TabType = 'overview' | 'hppc' | 'thermal' | 'degradation' | 'twin' | 'charging' | 'logs'

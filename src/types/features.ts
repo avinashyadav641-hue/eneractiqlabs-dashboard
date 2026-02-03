@@ -1,5 +1,5 @@
 /**
- * Shared type definitions for feature-engineered data
+ * Shared type definitions
  * MUST match backend/src/types/features.ts EXACTLY
  */
 
@@ -106,4 +106,57 @@ export interface MultiDayComparisonResponse {
   drone_id: string
   days: number[]
   features: DailyFeatures[]
+}
+
+// Charging Session features
+export interface ChargingSegment {
+  mode: string
+  current: number
+  voltage: number
+  duration: number
+  status: 'autonomously scheduled'
+  confidence: number
+}
+
+export interface ChargingSession {
+  drone_id: string
+  profile_graph: {
+    time: number[]
+    current: number[]
+    voltage: number[]
+    power: number[]
+    annotations: { time: number; label: string }[]
+  }
+  segments: ChargingSegment[]
+  summary: {
+    total_duration: number
+    target_soc: number
+    avg_power: number
+  }
+  metadata: {
+    target_soc: number
+    estimated_duration: number
+    expected_delta_T: number
+    predicted_delta_soh: number
+  }
+}
+
+export interface ChargingSessionResponse {
+  drone_id: string
+  charging_session: ChargingSession | null
+}
+
+// HPPC (Dynamic Power Capability) features
+export interface HPPCPoint {
+  soc_pct: number
+  pack_resistance_median: number
+  pack_resistance_low: number
+  pack_resistance_high: number
+  stress_index: number
+  confidence_samples: number
+}
+
+export interface HPPCResponse {
+  drone_id: string
+  data: HPPCPoint[]
 }
