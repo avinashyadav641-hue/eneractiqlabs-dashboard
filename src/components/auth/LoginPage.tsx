@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+
+type LookDirection = 'center' | 'right' | 'up-right' | 'down-right' | 'left'
 
 const LoginPage = () => {
     const [email, setEmail] = useState('')
@@ -8,33 +10,53 @@ const LoginPage = () => {
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
+    const [focusedField, setFocusedField] = useState<'email' | 'password' | null>(null)
+    const [shakeError, setShakeError] = useState(false)
+    const [lookDirection, setLookDirection] = useState<LookDirection>('center')
+
+    const containerRef = useRef<HTMLDivElement>(null)
     const { login } = useAuth()
     const navigate = useNavigate()
 
-    // Animation states
-    const [hoveredCharacter, setHoveredCharacter] = useState<number | null>(null)
-    const [blinkStates, setBlinkStates] = useState([false, false, false, false])
+    // Calculate look direction based on mouse position
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        if (showPassword || focusedField) return // Don't track mouse when looking away or at inputs
 
-    // Blinking animation for the characters
+        const container = containerRef.current
+        if (!container) return
+
+        const rect = container.getBoundingClientRect()
+        const centerX = rect.left + rect.width * 0.25 // Characters are on left side
+        const centerY = rect.top + rect.height * 0.5
+
+        const deltaX = e.clientX - centerX
+        const deltaY = e.clientY - centerY
+
+        // Determine direction based on mouse position relative to characters
+        if (deltaX > 200) {
+            if (deltaY < -100) setLookDirection('up-right')
+            else if (deltaY > 100) setLookDirection('down-right')
+            else setLookDirection('right')
+        } else {
+            setLookDirection('center')
+        }
+    }, [showPassword, focusedField])
+
     useEffect(() => {
-        const blinkInterval = setInterval(() => {
-            const randomChar = Math.floor(Math.random() * 4)
-            setBlinkStates(prev => {
-                const newState = [...prev]
-                newState[randomChar] = true
-                return newState
-            })
-            setTimeout(() => {
-                setBlinkStates(prev => {
-                    const newState = [...prev]
-                    newState[randomChar] = false
-                    return newState
-                })
-            }, 150)
-        }, 2000)
+        window.addEventListener('mousemove', handleMouseMove)
+        return () => window.removeEventListener('mousemove', handleMouseMove)
+    }, [handleMouseMove])
 
-        return () => clearInterval(blinkInterval)
-    }, [])
+    // Update look direction based on focus and password visibility
+    useEffect(() => {
+        if (showPassword) {
+            setLookDirection('left') // Look away when password is visible
+        } else if (focusedField === 'email') {
+            setLookDirection('up-right')
+        } else if (focusedField === 'password') {
+            setLookDirection('down-right')
+        }
+    }, [focusedField, showPassword])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -47,103 +69,118 @@ const LoginPage = () => {
             navigate('/')
         } else {
             setError('Invalid email or password')
+            setShakeError(true)
+            setTimeout(() => setShakeError(false), 600)
         }
         setLoading(false)
     }
 
+    // Calculate eye positions based on look direction
+    const getEyeOffset = () => {
+        switch (lookDirection) {
+            case 'right': return { x: 4, y: 0 }
+            case 'up-right': return { x: 3, y: -3 }
+            case 'down-right': return { x: 3, y: 3 }
+            case 'left': return { x: -5, y: 0 }
+            default: return { x: 0, y: 0 }
+        }
+    }
+
+    const eyeOffset = getEyeOffset()
+
+    // Smile transforms based on state
+    const getSmileStyle = () => {
+        if (shakeError) return 'scaleY(-1)' // Frown on error
+        return 'scaleY(1)'
+    }
+
     return (
-        <div className="min-h-screen bg-slate-100 flex">
+        <div ref={containerRef} className="min-h-screen bg-slate-100 flex">
             {/* Left Side - Animated Characters */}
             <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 relative overflow-hidden">
-                <div className="relative w-96 h-96">
+                <div
+                    className={`relative w-[420px] h-[400px] transition-transform duration-300 ${shakeError ? 'animate-shake' : ''}`}
+                >
                     {/* Orange Character - Semi-circle blob */}
-                    <div
-                        className="absolute bottom-0 -left-4 w-52 h-40 transition-transform duration-500 cursor-pointer"
-                        style={{
-                            transform: hoveredCharacter === 0 ? 'translateY(-10px) scale(1.02)' : 'translateY(0)',
-                        }}
-                        onMouseEnter={() => setHoveredCharacter(0)}
-                        onMouseLeave={() => setHoveredCharacter(null)}
+                    <div className="absolute bottom-0 -left-4 w-56 h-44 transition-transform duration-700 ease-out"
+                        style={{ transform: shakeError ? '' : `rotate(${lookDirection === 'left' ? -5 : lookDirection === 'right' ? 5 : 0}deg)` }}
                     >
-                        <svg viewBox="0 0 200 150" className="w-full h-full">
-                            <ellipse cx="100" cy="150" rx="100" ry="80" fill="#FF8A4C" />
-                            {/* Eyes */}
-                            <g className="transition-all duration-150">
-                                <ellipse cx="60" cy="90" rx={blinkStates[0] ? 8 : 8} ry={blinkStates[0] ? 2 : 8} fill="#1a1a2e" />
-                                <ellipse cx="100" cy="90" rx={blinkStates[0] ? 8 : 8} ry={blinkStates[0] ? 2 : 8} fill="#1a1a2e" />
+                        <svg viewBox="0 0 220 170" className="w-full h-full">
+                            <ellipse cx="110" cy="170" rx="110" ry="90" fill="#FF8A4C" />
+                            {/* Eyes that follow */}
+                            <g className="transition-transform duration-200" style={{ transform: `translate(${eyeOffset.x}px, ${eyeOffset.y}px)` }}>
+                                <circle cx="70" cy="100" r="5" fill="#1a1a2e" />
+                                <circle cx="95" cy="100" r="5" fill="#1a1a2e" />
                             </g>
-                            {/* Smile */}
-                            <path d="M 70 115 Q 100 135 130 115" stroke="#1a1a2e" strokeWidth="4" fill="none" strokeLinecap="round" />
+                            {/* Smile/Frown */}
+                            <path
+                                d="M 75 120 Q 95 138 115 120"
+                                stroke="#1a1a2e"
+                                strokeWidth="4"
+                                fill="none"
+                                strokeLinecap="round"
+                                className="transition-transform duration-300 origin-center"
+                                style={{ transform: getSmileStyle(), transformOrigin: '95px 125px' }}
+                            />
                         </svg>
                     </div>
 
-                    {/* Purple Character - Tall rectangle with rounded top */}
-                    <div
-                        className="absolute bottom-0 left-28 w-36 transition-transform duration-500 cursor-pointer"
-                        style={{
-                            transform: hoveredCharacter === 1 ? 'translateY(-15px) scale(1.02)' : 'translateY(0)',
-                        }}
-                        onMouseEnter={() => setHoveredCharacter(1)}
-                        onMouseLeave={() => setHoveredCharacter(null)}
+                    {/* Purple Character - Tall rectangle with bend */}
+                    <div className="absolute bottom-0 left-32 w-40 transition-transform duration-500 ease-out"
+                        style={{ transform: `rotate(${shakeError ? 0 : lookDirection === 'left' ? -8 : lookDirection === 'right' ? 8 : 0}deg)` }}
                     >
-                        <svg viewBox="0 0 140 280" className="w-full h-full">
-                            <rect x="0" y="20" width="140" height="260" rx="20" fill="#7B68EE" />
-                            {/* Eyes - looking to the side */}
-                            <g className="transition-all duration-150">
-                                <circle cx="40" cy="70" r={blinkStates[1] ? 2 : 12} fill="white" />
-                                <circle cx="40" cy="70" r={blinkStates[1] ? 1 : 6} fill="#1a1a2e" style={{ transform: 'translate(3px, 0)' }} />
-                                <circle cx="90" cy="70" r={blinkStates[1] ? 2 : 12} fill="white" />
-                                <circle cx="90" cy="70" r={blinkStates[1] ? 1 : 6} fill="#1a1a2e" style={{ transform: 'translate(3px, 0)' }} />
+                        <svg viewBox="0 0 160 320" className="w-full h-full">
+                            {/* Main body with slight lean */}
+                            <path d="M 20 320 L 0 40 Q 0 0 40 0 L 120 0 Q 160 0 160 40 L 140 320 Z" fill="#7B68EE" />
+                            {/* Eyes that follow */}
+                            <g className="transition-transform duration-200" style={{ transform: `translate(${eyeOffset.x * 1.2}px, ${eyeOffset.y}px)` }}>
+                                <circle cx="55" cy="60" r="8" fill="white" />
+                                <circle cx={55 + eyeOffset.x} cy={60 + eyeOffset.y * 0.5} r="4" fill="#1a1a2e" />
+                                <circle cx="105" cy="60" r="8" fill="white" />
+                                <circle cx={105 + eyeOffset.x} cy={60 + eyeOffset.y * 0.5} r="4" fill="#1a1a2e" />
                             </g>
-                            {/* Box/square on corner */}
-                            <rect x="100" y="30" width="25" height="25" rx="4" stroke="white" strokeWidth="3" fill="none" />
+                            {/* Mouth - line */}
+                            <line x1="60" y1="95" x2="100" y2="95" stroke="#1a1a2e" strokeWidth="3" strokeLinecap="round"
+                                className="transition-transform duration-300"
+                                style={{ transform: shakeError ? 'rotate(-10deg)' : '' }}
+                            />
                         </svg>
                     </div>
 
                     {/* Dark Character - Medium rectangle */}
-                    <div
-                        className="absolute bottom-0 left-56 w-28 transition-transform duration-500 cursor-pointer"
-                        style={{
-                            transform: hoveredCharacter === 2 ? 'translateY(-12px) scale(1.02)' : 'translateY(0)',
-                        }}
-                        onMouseEnter={() => setHoveredCharacter(2)}
-                        onMouseLeave={() => setHoveredCharacter(null)}
+                    <div className="absolute bottom-0 left-60 w-28 transition-transform duration-400 ease-out"
+                        style={{ transform: `rotate(${shakeError ? 0 : lookDirection === 'left' ? -6 : lookDirection === 'right' ? 6 : 0}deg)` }}
                     >
                         <svg viewBox="0 0 110 200" className="w-full h-full">
                             <rect x="0" y="10" width="110" height="190" rx="15" fill="#1a1a2e" />
-                            {/* Eyes */}
-                            <g className="transition-all duration-150">
-                                <circle cx="35" cy="55" r={blinkStates[2] ? 1 : 6} fill="white" />
-                                <circle cx="65" cy="55" r={blinkStates[2] ? 1 : 6} fill="white" />
+                            {/* Eyes that follow */}
+                            <g className="transition-transform duration-200" style={{ transform: `translate(${eyeOffset.x}px, ${eyeOffset.y}px)` }}>
+                                <circle cx="38" cy="55" r="6" fill="white" />
+                                <circle cx={38 + eyeOffset.x * 0.3} cy={55 + eyeOffset.y * 0.3} r="3" fill="white" />
+                                <circle cx="72" cy="55" r="6" fill="white" />
+                                <circle cx={72 + eyeOffset.x * 0.3} cy={55 + eyeOffset.y * 0.3} r="3" fill="white" />
                             </g>
+                            {/* Mouth - small dot or line */}
+                            <circle cx="55" cy="85" r="3" fill="white" opacity={shakeError ? 0 : 1} />
+                            <line x1="45" y1="85" x2="65" y2="85" stroke="white" strokeWidth="3" strokeLinecap="round" opacity={shakeError ? 1 : 0} />
                         </svg>
                     </div>
 
                     {/* Yellow Character - Pill/rounded blob */}
-                    <div
-                        className="absolute bottom-0 right-2 w-32 transition-transform duration-500 cursor-pointer"
-                        style={{
-                            transform: hoveredCharacter === 3 ? 'translateY(-10px) scale(1.02)' : 'translateY(0)',
-                        }}
-                        onMouseEnter={() => setHoveredCharacter(3)}
-                        onMouseLeave={() => setHoveredCharacter(null)}
+                    <div className="absolute bottom-0 right-6 w-28 transition-transform duration-300 ease-out"
+                        style={{ transform: `rotate(${shakeError ? 0 : lookDirection === 'left' ? -4 : lookDirection === 'right' ? 4 : 0}deg)` }}
                     >
-                        <svg viewBox="0 0 120 160" className="w-full h-full">
-                            <rect x="0" y="0" width="120" height="160" rx="60" fill="#F4D03F" />
-                            {/* Eyes - simple line eyes */}
-                            <line x1="35" y1="75" x2="50" y2="75" stroke="#1a1a2e" strokeWidth="4" strokeLinecap="round"
-                                style={{ opacity: blinkStates[3] ? 0 : 1 }} />
-                            <line x1="70" y1="75" x2="85" y2="75" stroke="#1a1a2e" strokeWidth="4" strokeLinecap="round"
-                                style={{ opacity: blinkStates[3] ? 0 : 1 }} />
-                            {/* Straight mouth */}
-                            <line x1="40" y1="100" x2="80" y2="100" stroke="#1a1a2e" strokeWidth="4" strokeLinecap="round" />
+                        <svg viewBox="0 0 110 160" className="w-full h-full">
+                            <rect x="0" y="0" width="110" height="160" rx="55" fill="#F4D03F" />
+                            {/* Eyes - dots that follow */}
+                            <g className="transition-transform duration-200" style={{ transform: `translate(${eyeOffset.x * 0.8}px, ${eyeOffset.y}px)` }}>
+                                <circle cx="40" cy="70" r="4" fill="#1a1a2e" />
+                                <circle cx="70" cy="70" r="4" fill="#1a1a2e" />
+                            </g>
+                            {/* Mouth - straight line */}
+                            <line x1="40" y1="100" x2="70" y2="100" stroke="#1a1a2e" strokeWidth="3" strokeLinecap="round" />
                         </svg>
                     </div>
-
-                    {/* Floating animation dots */}
-                    <div className="absolute top-10 left-20 w-3 h-3 bg-primary/30 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                    <div className="absolute top-24 right-16 w-2 h-2 bg-purple-400/40 rounded-full animate-bounce" style={{ animationDelay: '0.5s' }} />
-                    <div className="absolute top-8 right-32 w-4 h-4 bg-amber-400/30 rounded-full animate-bounce" style={{ animationDelay: '1s' }} />
                 </div>
             </div>
 
@@ -155,10 +192,12 @@ const LoginPage = () => {
                         <img
                             src="/avin/electicalogo.png"
                             alt="Electica"
-                            className="h-10 mx-auto mb-8"
+                            className="h-12 mx-auto mb-3"
                         />
-                        <h1 className="text-3xl font-bold text-slate-900">Welcome Back</h1>
+                        <p className="text-sm text-slate-900 font-medium">Autonomous Battery Intelligence Platform</p>
                     </div>
+
+                    <h1 className="text-3xl font-bold text-slate-900 text-center mb-8">Welcome Back</h1>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
@@ -169,6 +208,8 @@ const LoginPage = () => {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
+                                onFocus={() => setFocusedField('email')}
+                                onBlur={() => setFocusedField(null)}
                                 className="w-full px-0 py-3 bg-transparent border-0 border-b border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-colors text-base"
                                 required
                             />
@@ -183,13 +224,17 @@ const LoginPage = () => {
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-0 py-3 bg-transparent border-0 border-b border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary transition-colors pr-10 text-base"
+                                    onFocus={() => setFocusedField('password')}
+                                    onBlur={() => setFocusedField(null)}
+                                    className={`w-full px-0 py-3 bg-transparent border-0 border-b text-slate-900 placeholder-slate-400 focus:outline-none transition-colors pr-10 text-base ${error ? 'border-red-400 text-red-500' : 'border-slate-200 focus:border-primary'
+                                        }`}
                                     required
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                    className={`absolute right-0 top-1/2 -translate-y-1/2 transition-colors ${error ? 'text-red-400 hover:text-red-600' : 'text-slate-400 hover:text-slate-600'
+                                        }`}
                                 >
                                     <span className="material-symbols-outlined text-[20px]">
                                         {showPassword ? 'visibility_off' : 'visibility'}
@@ -212,8 +257,7 @@ const LoginPage = () => {
                         </div>
 
                         {error && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-600 text-sm flex items-center gap-2">
-                                <span className="material-symbols-outlined text-[18px]">error</span>
+                            <div className="text-red-500 text-sm text-center">
                                 {error}
                             </div>
                         )}
@@ -250,12 +294,20 @@ const LoginPage = () => {
                     <p className="text-center text-slate-500 text-sm mt-10">
                         Don't Have An Account? <span className="text-slate-900 underline cursor-pointer hover:text-primary">Sign Up</span>
                     </p>
-
-                    <p className="text-center text-slate-400 text-xs mt-6">
-                        Autonomous Battery Intelligence Platform
-                    </p>
                 </div>
             </div>
+
+            {/* Custom shake animation */}
+            <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0) rotate(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px) rotate(-2deg); }
+          20%, 40%, 60%, 80% { transform: translateX(5px) rotate(2deg); }
+        }
+        .animate-shake {
+          animation: shake 0.6s ease-in-out;
+        }
+      `}</style>
         </div>
     )
 }
