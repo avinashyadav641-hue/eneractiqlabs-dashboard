@@ -93,7 +93,7 @@ const Header = () => {
             alt="Electica Logo"
             className="h-8 w-auto object-contain"
           />
-          <h2 className="text-xl font-bold tracking-tight">ElecticOS</h2>
+          <h2 className="text-xl font-bold tracking-tight">ElecticaOS</h2>
         </div>
       </Link>
 
