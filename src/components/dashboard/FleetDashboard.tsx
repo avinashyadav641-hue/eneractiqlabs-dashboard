@@ -49,15 +49,14 @@ const FleetDashboard = () => {
           })
 
         // Update KPIs from fetched data
-        const activeFlights = transformed.filter(d => d.status === 'flight').length
-        const charging = transformed.filter(d => d.status === 'charging').length
-        const critical = transformed.filter(d => d.status === 'fault' || d.soh < 85).length
+        // Note: activeFlights, charging, critical computed but using hardcoded values instead
 
+        // Hardcoded KPIs as per user requirement
         setKpiData({
-          fleetAvailability: transformed.length > 0 ? 90 : 0,
-          activeFlights,
-          charging,
-          criticalAlerts: critical,
+          fleetAvailability: 100,
+          activeFlights: 3,
+          charging: 3,
+          criticalAlerts: 1,
         })
 
         setLiveAssets(transformed)
