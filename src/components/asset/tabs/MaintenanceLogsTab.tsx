@@ -14,34 +14,32 @@ const MaintenanceLogsTab = () => {
             Autonomous by default
           </span>
           <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-slate-900 text-white text-[11px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl leading-relaxed">
-            Actions shown here were triggered by ElecticaOS models unless explicitly overridden.
+            Actions shown here were triggered by Eneractiq Labs models unless explicitly overridden.
           </div>
         </div>
       </div>
-      
+
       <div className="flex flex-col gap-6">
         {mockMaintenanceLogs.map(log => (
           <div
             key={log.id}
-            className={`glass-panel p-6 hover:shadow-lg transition-all border-l-4 ${
-              log.type === 'critical'
+            className={`glass-panel p-6 hover:shadow-lg transition-all border-l-4 ${log.type === 'critical'
                 ? 'border-l-critical'
                 : log.type === 'warning'
-                ? 'border-l-warning'
-                : 'border-l-electric-blue'
-            }`}
+                  ? 'border-l-warning'
+                  : 'border-l-electric-blue'
+              }`}
           >
             <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase ${
-                      log.type === 'critical'
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase ${log.type === 'critical'
                         ? 'bg-critical text-white'
                         : log.type === 'warning'
-                        ? 'bg-warning/10 text-warning border border-warning/20'
-                        : 'bg-electric-blue/10 text-electric-blue border border-electric-blue/20'
-                    }`}
+                          ? 'bg-warning/10 text-warning border border-warning/20'
+                          : 'bg-electric-blue/10 text-electric-blue border border-electric-blue/20'
+                      }`}
                   >
                     {log.type}
                   </span>
@@ -61,13 +59,12 @@ const MaintenanceLogsTab = () => {
                 </div>
               </div>
               <button
-                className={`btn-primary px-6 py-3 font-semibold text-sm whitespace-nowrap ${
-                  log.type === 'critical'
+                className={`btn-primary px-6 py-3 font-semibold text-sm whitespace-nowrap ${log.type === 'critical'
                     ? 'bg-gradient-to-br from-critical to-red-600 text-white shadow-lg'
                     : log.type === 'warning'
-                    ? 'bg-white border border-slate-200 text-slate-900 hover:bg-slate-50'
-                    : 'bg-gradient-to-br from-primary to-electric-blue text-white shadow-lg'
-                }`}
+                      ? 'bg-white border border-slate-200 text-slate-900 hover:bg-slate-50'
+                      : 'bg-gradient-to-br from-primary to-electric-blue text-white shadow-lg'
+                  }`}
               >
                 {log.action}
               </button>

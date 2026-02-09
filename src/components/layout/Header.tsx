@@ -32,7 +32,7 @@ const notifications: Notification[] = [
     id: '3',
     type: 'info',
     title: 'System Update',
-    message: 'ElecticOS v2.1 available for all fleet assets.',
+    message: 'Eneractiq Labs v2.1 available for all fleet assets.',
     time: '1 hour ago',
     read: true,
   },
@@ -89,11 +89,11 @@ const Header = () => {
       <Link to="/" className="flex items-center gap-8">
         <div className="flex items-center gap-3 text-slate-900 cursor-pointer">
           <img
-            src="/avin/electicalogo.png"
-            alt="Electica Logo"
+            src="/avin/Eneractiq.png"
+            alt="Eneractiq Labs Logo"
             className="h-8 w-auto object-contain"
           />
-          <h2 className="text-xl font-bold tracking-tight">ElecticaOS</h2>
+          <h2 className="text-xl font-bold tracking-tight">Eneractiq Labs</h2>
         </div>
       </Link>
 

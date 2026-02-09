@@ -14,7 +14,7 @@ import type {
   HPPCResponse,
 } from '../types/features'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.electica.in'
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.eneractiqlabs.in'
 
 // Note: API endpoints now use /drone/{id}/... pattern, not /api/features/drone/{id}/...
 

@@ -190,8 +190,8 @@ const LoginPage = () => {
                     {/* Logo */}
                     <div className="text-center mb-10">
                         <img
-                            src="/avin/electicalogo.png"
-                            alt="Electica"
+                            src="/avin/Eneractiq.png"
+                            alt="Eneractiq Labs"
                             className="h-12 mx-auto mb-3"
                         />
                         <p className="text-sm text-slate-900 font-medium">Autonomous Battery Intelligence Platform</p>

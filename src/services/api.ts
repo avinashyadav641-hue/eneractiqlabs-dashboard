@@ -1,10 +1,10 @@
 /**
  * API Service Layer for Analytics Backend
- * Centralized API calls to https://api.electica.in
+ * Centralized API calls to https://api.eneractiqlabs.in
  */
 
 // Use Vite environment variable, fallback to production URL
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.electica.in';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.eneractiqlabs.in';
 
 // Types for API responses
 export interface OverviewResponse {
@@ -60,7 +60,7 @@ export interface DailySummaryResponse {
  */
 async function fetchAPI<T>(endpoint: string): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const response = await fetch(url, {
     method: 'GET',
     headers: {

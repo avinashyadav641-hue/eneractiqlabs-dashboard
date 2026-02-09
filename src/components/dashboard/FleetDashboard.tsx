@@ -17,7 +17,7 @@ const FleetDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'https://api.electica.in'
+        const API_URL = import.meta.env.VITE_API_URL || 'https://api.eneractiqlabs.in'
 
         // Fetch snapshots for ORCA001-ORCA010
         const dronePromises = Array.from({ length: 10 }, (_, i) => {
