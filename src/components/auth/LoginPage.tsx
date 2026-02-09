@@ -202,10 +202,10 @@ const LoginPage = () => {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label className="block text-sm text-slate-600 mb-2">
-                                Email
+                                Email / User ID
                             </label>
                             <input
-                                type="email"
+                                type="text"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 onFocus={() => setFocusedField('email')}
