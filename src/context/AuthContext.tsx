@@ -16,15 +16,26 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null)
 
 // Hardcoded credentials for demo
-const VALID_CREDENTIALS = {
-    email: 'Avinash@electica.in',
-    password: 'Electica@100Bil',
-    user: {
-        email: 'Avinash@electica.in',
-        name: 'Avinash Yadav',
-        avatar: '/profile-avinash.jpg'
+const VALID_CREDENTIALS = [
+    {
+        email: 'avinash@electica.in',
+        password: 'Electica@100Bil',
+        user: {
+            email: 'Avinash@electica.in',
+            name: 'Avinash Yadav',
+            avatar: '/profile-avinash.jpg'
+        }
+    },
+    {
+        email: 'yc',
+        password: 'yc@S26',
+        user: {
+            email: 'yc@eneractiqlabs.in',
+            name: 'YC Demo',
+            avatar: '/profile-avinash.jpg'
+        }
     }
-}
+]
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
@@ -38,10 +49,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [])
 
     const login = async (email: string, password: string): Promise<boolean> => {
-        // Validate credentials
-        if (email === VALID_CREDENTIALS.email && password === VALID_CREDENTIALS.password) {
-            setUser(VALID_CREDENTIALS.user)
-            localStorage.setItem('electica_user', JSON.stringify(VALID_CREDENTIALS.user))
+        // Validate credentials (case-insensitive email)
+        const matchedUser = VALID_CREDENTIALS.find(
+            cred => cred.email.toLowerCase() === email.toLowerCase() && cred.password === password
+        )
+        if (matchedUser) {
+            setUser(matchedUser.user)
+            localStorage.setItem('electica_user', JSON.stringify(matchedUser.user))
             return true
         }
         return false
