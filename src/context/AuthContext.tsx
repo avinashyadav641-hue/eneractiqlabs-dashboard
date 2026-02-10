@@ -32,7 +32,7 @@ const VALID_CREDENTIALS = [
         user: {
             email: 'yc@eneractiqlabs.in',
             name: 'YC Demo',
-            avatar: '/profile-avinash.jpg'
+            avatar: '/yc-logo.png'
         }
     }
 ]
