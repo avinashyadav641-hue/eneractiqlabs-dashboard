@@ -18,17 +18,17 @@ const AuthContext = createContext<AuthContextType | null>(null)
 // Hardcoded credentials for demo
 const VALID_CREDENTIALS = [
     {
-        email: 'avinash@electica.in',
+        email: 'avinash@eneractiqlabs.in',
         password: 'Electica@100Bil',
         user: {
-            email: 'Avinash@electica.in',
+            email: 'avinash@eneractiqlabs.in',
             name: 'Avinash Yadav',
             avatar: '/profile-avinash.jpg'
         }
     },
     {
-        email: 'yc',
-        password: 'yc@S26',
+        email: 'yc@eneractiqlabs.in',
+        password: 'YC@S26',
         user: {
             email: 'yc@eneractiqlabs.in',
             name: 'YC Demo',
